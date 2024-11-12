@@ -1,17 +1,26 @@
-import { useQuery } from '@tanstack/react-query'
-import { getAnecdotes } from './services/anecdotes'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { getAnecdotes, uppdateAnecdote } from './services/anecdotes'
 import AnecdoteForm from './components/AnecdoteForm'
 import Notification from './components/Notification'
 
 const App = () => {
+  const queryClient = useQueryClient
+
+  const updateAnecdoteMutation = useMutation({
+    mutationFn: uppdateAnecdote,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['anecdotes'] })
+    },
+  })
+
   const handleVote = anecdote => {
-    console.log('vote')
+    const updateAnecdoteVote = { ...anecdote, votes: (anecdote.votes += 1) }
+    updateAnecdoteMutation.mutate(updateAnecdoteVote)
   }
 
   const result = useQuery({
     queryKey: ['anecdotes'],
     queryFn: getAnecdotes,
-    retry: 1,
   })
 
   if (result.isLoading) {
@@ -22,7 +31,7 @@ const App = () => {
     return <div>Anecdote services not available due to problems in server</div>
   }
 
-  console.log(JSON.parse(JSON.stringify(result)))
+  // console.log(JSON.parse(JSON.stringify(result)))
 
   const anecdotes = result.data
 
